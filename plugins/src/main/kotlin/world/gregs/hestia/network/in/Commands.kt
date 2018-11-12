@@ -16,6 +16,7 @@ import world.gregs.hestia.core.network.Session
 import world.gregs.hestia.core.network.packets.Packet
 import world.gregs.hestia.core.network.packets.PacketOpcode
 import world.gregs.hestia.core.network.packets.PacketSize
+import world.gregs.hestia.game.component.update.transform
 import world.gregs.hestia.game.update.Marker
 import world.gregs.hestia.network.game.GamePacket
 
@@ -41,6 +42,15 @@ class Commands : GamePacket() {
         }
         println("Command ${parts[0]}")
         when(parts[0]) {
+            //Player updating flags
+            "transform" -> {
+                val id = parts[1].toInt()
+                if(id < 0) {
+                    entity.updateAppearance()
+                } else {
+                    entity.transform(parts[1].toInt())
+                }
+            }
             "bot" -> {
                 es.dispatch(CreateBot("Bot"))
             }
@@ -56,28 +66,9 @@ class Commands : GamePacket() {
             "m" -> {
                 val mob = entity.world.getEntity(entity.world.mobs().first())
                 val position = mob.getComponent(Position::class)!!
-                mob.navigate(position.x + 1, position.y + 2)
-                mob.animate(2312)
-            }
-            "party" -> {
-                val bot = entity.world.getEntity(entity.world.players()[1])
-                val player = entity.world.getEntity(entity.world.players().first())
-                player.move(3085, 3500)
-                bot.move(3088, 3500)
-                bot.turn(-1, 0)
-                player.turn(1, 0)
-                entity.schedule(1, 0) {
-                    bot.force("Bot!")
-                    bot.navigate(3087, 3500)
-                    player.force("Player!")
-                    player.navigate(3086, 3500)
-                    stop()
-                }
-                entity.schedule(2, 0) {
-                    bot.animate(2312)
-                    player.animate(2312)
-                    stop()
-                }
+//                mob.navigate(position.x + 1, position.y + 2)
+//                mob.animate(2312)
+                mob.transform(0)
             }
             "hit" -> {
                 for(i in 0 until 5)
