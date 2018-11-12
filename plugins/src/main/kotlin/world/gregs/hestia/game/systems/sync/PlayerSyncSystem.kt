@@ -43,7 +43,7 @@ class PlayerSyncSystem : PlayerUpdateSystem(Aspect.all(NetworkSession::class, Re
     /**
      * Process each local player
      */
-    override fun local(entityId: Int, local: Int, type: UpdateStage, iterator: MutableIterator<Int>) {
+    override fun local(entityId: Int, local: Int, type: UpdateStage, update: Boolean, iterator: MutableIterator<Int>) {
         //Update
         if (type != UpdateStage.SKIP && type != UpdateStage.REMOVE) {
             update(entityId, local, data, true, false)
@@ -53,7 +53,7 @@ class PlayerSyncSystem : PlayerUpdateSystem(Aspect.all(NetworkSession::class, Re
             skip++
         } else {
             skipPlayers()
-            updateLocalPlayer(type, entityId, local, iterator)
+            updateLocalPlayer(type, entityId, local, update, iterator)
         }
     }
 
@@ -101,9 +101,9 @@ class PlayerSyncSystem : PlayerUpdateSystem(Aspect.all(NetworkSession::class, Re
         es.send(entityId, packet)
     }
 
-    private fun updateLocalPlayer(type: UpdateStage, player: Int, local: Int, iterator: MutableIterator<Int>) {
+    private fun updateLocalPlayer(type: UpdateStage, player: Int, local: Int, update: Boolean, iterator: MutableIterator<Int>) {
         packet.writeBits(1, 1)//Needs update
-        packet.writeBits(1, if (type == UpdateStage.REMOVE) 0 else flags.any { t -> t.subscription.entities.contains(local) }.int)//Is mask update needed?
+        packet.writeBits(1, if (type == UpdateStage.REMOVE) 0 else update.int)//Is mask update needed?
         if (type != UpdateStage.WALKING && type != UpdateStage.RUNNING) {
             packet.writeBits(2, type.movementType())//Movement type (0 none, 1 walk, 2 run, 3 tele)
         }
@@ -115,7 +115,6 @@ class PlayerSyncSystem : PlayerUpdateSystem(Aspect.all(NetworkSession::class, Re
                 if(lastPosition != null) {
                     MapRegionSystem.updateHash(local, lastPosition)
                 }
-                println("Last position: $lastPosition")
                 sendMovementUpdate(player, local)
                 iterator.remove()
             }

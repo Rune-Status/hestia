@@ -34,7 +34,7 @@ class PlayerPlugin : Plugin {
         b.with(PRE_SYNC_PRIORITY, TickTaskSystem())
 
         //Login
-        b.with(ClientIndexSystem(), PlayerLoginSystem(), MapRegionSystem(), AppearanceSystem(), InterfaceSystem())
+        b.with(ClientIndexSystem(), RegionSystem(), PlayerLoginSystem(), MapRegionSystem(), AppearanceSystem(), InterfaceSystem())
         b.with(DamageSystem(), AnimationSystem(), GraphicsSystem())
     }
 

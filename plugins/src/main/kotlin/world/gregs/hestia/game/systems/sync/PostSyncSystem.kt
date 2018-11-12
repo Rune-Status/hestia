@@ -55,7 +55,7 @@ class PostSyncSystem : IteratingSystem(Aspect.all(Renderable::class)) {
     override fun process(entityId: Int) {
         //Update global/local entities
         viewportMapper.get(entityId)?.update(playerSubscription.entities)
-        viewportMapper.get(entityId)?.localMobs()?.clear()
+//        viewportMapper.get(entityId)?.localMobs()?.clear()
 
         //Flags
         appearanceMapper.remove(entityId)

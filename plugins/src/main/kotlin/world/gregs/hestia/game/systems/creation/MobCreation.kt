@@ -10,7 +10,7 @@ import world.gregs.hestia.game.events.CreateMob
 import world.gregs.hestia.services.Aspect
 import net.mostlyoriginal.api.event.common.Subscribe
 import net.mostlyoriginal.api.system.core.PassiveSystem
-import world.gregs.hestia.game.component.entity.Player
+import world.gregs.hestia.game.component.entity.Mob
 
 class MobCreation : PassiveSystem() {
 
@@ -19,7 +19,7 @@ class MobCreation : PassiveSystem() {
     private lateinit var subscription: EntitySubscription
     override fun initialize() {
         super.initialize()
-        subscription = world.aspectSubscriptionManager.get(Aspect.all(Player::class))
+        subscription = world.aspectSubscriptionManager.get(Aspect.all(Mob::class))
     }
 
     @Subscribe
@@ -27,7 +27,7 @@ class MobCreation : PassiveSystem() {
         val entityId = EntityFactory.create(MobFactory::class)
 
         val type = typeMapper.get(entityId)
-        type.id = event.id
+        type.id = event.mobId
 
         val position = positionMapper.get(entityId)
         position.y = 3501 - subscription.entities.size()

@@ -26,11 +26,11 @@ abstract class SynchronizeSystem(aspect: com.artemis.Aspect.Builder): IteratingS
 
     internal lateinit var flags: List<FlagType>
 
-    abstract fun getLocals(viewport: Viewport): MutableList<Int>
+    abstract fun getLocals(entityId: Int, viewport: Viewport): MutableList<Int>
 
-    abstract fun getGlobals(viewport: Viewport): MutableList<Int>
+    abstract fun getGlobals(entityId: Int, viewport: Viewport): MutableList<Int>
 
-    open fun local(entityId: Int, local: Int, type: UpdateStage, iterator: MutableIterator<Int>) {}
+    open fun local(entityId: Int, local: Int, type: UpdateStage, update: Boolean, iterator: MutableIterator<Int>) {}
 
     open fun global(entityId: Int, global: Int, type: UpdateStage, iterator: MutableIterator<Int>) {}
 
@@ -46,18 +46,19 @@ abstract class SynchronizeSystem(aspect: com.artemis.Aspect.Builder): IteratingS
         begin(entityId)
 
         //Local entities
-        var iterator = getLocals(viewport).iterator()
+        var iterator = getLocals(entityId, viewport).iterator()
         while (iterator.hasNext()) {
             val localId = iterator.next()
 
-            val type = getLocalStage(entityId, localId)
-            local(entityId, localId, type, iterator)
+            val update = flags.any { t -> t.subscription.entities.contains(localId) }
+            val type = getLocalStage(entityId, localId, update)
+            local(entityId, localId, type, update, iterator)
         }
 
         middle(entityId)
 
         //Global entities
-        iterator = getGlobals(viewport).iterator()
+        iterator = getGlobals(entityId, viewport).iterator()
         while (iterator.hasNext()) {
             val entityIndex = iterator.next()
 
@@ -68,13 +69,13 @@ abstract class SynchronizeSystem(aspect: com.artemis.Aspect.Builder): IteratingS
         end(entityId)
     }
 
-    private fun getLocalStage(entityId: Int, local: Int): UpdateStage {
+    private fun getLocalStage(entityId: Int, local: Int, update: Boolean): UpdateStage {
         return when {
             !world.entityManager.isActive(local) /* || local.hasFinished() */ || !withinDistance(entityId, local) -> UpdateStage.REMOVE
             movingMapper.has(local) -> UpdateStage.MOVE
             runMapper.has(local) -> UpdateStage.RUNNING
             walkMapper.has(local) -> UpdateStage.WALKING
-            flags.any { t -> t.subscription.entities.contains(local) } -> UpdateStage.UPDATE
+            update -> UpdateStage.UPDATE
             else -> UpdateStage.SKIP
         }
     }
@@ -94,7 +95,6 @@ abstract class SynchronizeSystem(aspect: com.artemis.Aspect.Builder): IteratingS
         if (types.isEmpty()) {
             return
         }
-
         var maskData = 0
         types.forEach {
             maskData = maskData or it.mask

@@ -17,14 +17,12 @@ import world.gregs.hestia.game.component.update.gfx.ThirdGraphic
 import world.gregs.hestia.game.component.movement.Run
 import world.gregs.hestia.game.component.movement.Walk
 import world.gregs.hestia.game.component.update.*
-import world.gregs.hestia.services.Aspect
-import world.gregs.hestia.services.exclude
-import world.gregs.hestia.services.toArray
 import world.gregs.hestia.network.update.mob.*
 import world.gregs.hestia.network.update.player.*
 import world.gregs.hestia.game.component.entity.Mob
-import world.gregs.hestia.services.one
 import world.gregs.hestia.game.component.map.Position
+import world.gregs.hestia.services.*
+import world.gregs.hestia.game.systems.RegionSystem
 
 abstract class MobUpdateSystem(aspect: com.artemis.Aspect.Builder) : SynchronizeSystem(aspect) {
     //Flags
@@ -46,14 +44,19 @@ abstract class MobUpdateSystem(aspect: com.artemis.Aspect.Builder) : Synchronize
     private lateinit var transformMapper: ComponentMapper<Transform>
     private lateinit var mobSubscription: EntitySubscription
 
-    override fun getLocals(viewport: Viewport): MutableList<Int> {
+    override fun getLocals(entityId: Int, viewport: Viewport): MutableList<Int> {
         return viewport.localMobs()
     }
 
-    override fun getGlobals(viewport: Viewport): MutableList<Int> {
-        return mobSubscription.entities.toArray()
+    override fun getGlobals(entityId: Int, viewport: Viewport): MutableList<Int> {
+        val regionId = positionMapper.get(entityId).regionId
+        return world.getSystem(RegionSystem::class).regions.first { it.regionId == regionId }.mobs
                 .filterNot { viewport.localMobs().contains(it) }
                 .toMutableList()
+        //TODO improve with real region system
+        /*return mobSubscription.entities.toArray()
+                .filterNot { viewport.localMobs().contains(it) }
+                .toMutableList()*/
     }
 
     override fun initialize() {
@@ -68,6 +71,7 @@ abstract class MobUpdateSystem(aspect: com.artemis.Aspect.Builder) : Synchronize
                 create(0x20000, Aspect.all(Renderable::class, FourthGraphic::class), MobGraphicMask(fourthGraphicMapper)),
                 //Hits
                 create(0x40, Aspect.all(Renderable::class, Damage::class), HitsMask(damageMapper, true)),
+                //0x100 - Second hp bar?
                 //Name
                 create(0x40000, Aspect.all(Renderable::class).one(UpdateDisplayName::class), MobNameMask(displayNameMapper), true),
                 //Transform
@@ -76,16 +80,21 @@ abstract class MobUpdateSystem(aspect: com.artemis.Aspect.Builder) : Synchronize
                 create(0x2, Aspect.all(Renderable::class, ForceChat::class), ForceChatMask(forceChatMapper)),
                 //Face Direction
                 create(0x8, Aspect.all(Renderable::class, Facing::class).exclude(Run::class, Walk::class), MobFacingMask(positionMapper, facingMapper)),
-                //Force Movement
-                create(0x400, Aspect.all(Renderable::class, Position::class, ForceMovement::class), MobForceMovementMask(positionMapper, forceMovementMapper)),
                 //Combat level
                 create(0x80000, Aspect.all(Renderable::class, UpdateCombatLevel::class), MobCombatLevelMask(combatLevelMapper), true),
+                //0x2000 - Change colours
+                //0x10000 - Some kind of definition change (not sure it actually does anything
+                //Force Movement
+                create(0x400, Aspect.all(Renderable::class, Position::class, ForceMovement::class), MobForceMovementMask(positionMapper, forceMovementMapper)),
                 //Animation
                 create(0x10, Aspect.all(Renderable::class).one(FirstAnimation::class, SecondAnimation::class, ThirdAnimation::class, FourthAnimation::class), MobAnimMask(firstAnimationMapper, secondAnimationMapper, thirdAnimationMapper, fourthAnimationMapper)),
+                //0x800 - Definition change again, this time does do something
+                //0x4000 - Does something to animation frames?
                 //Second Graphic
                 create(0x1000, Aspect.all(Renderable::class, SecondGraphic::class), MobGraphicMask(secondGraphicMapper)),
                 //First Graphic
                 create(0x4, Aspect.all(Renderable::class, FirstGraphic::class), MobGraphicMask(firstGraphicMapper))
+                //0x200 - Model lighting?
         )
     }
 

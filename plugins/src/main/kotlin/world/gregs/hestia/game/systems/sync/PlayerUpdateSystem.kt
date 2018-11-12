@@ -45,31 +45,37 @@ abstract class PlayerUpdateSystem(aspect: com.artemis.Aspect.Builder): Synchroni
     private lateinit var forceMovementMapper: ComponentMapper<ForceMovement>
     private lateinit var facingMapper: ComponentMapper<Facing>
 
-    override fun getLocals(viewport: Viewport): MutableList<Int> {
+    override fun getLocals(entityId: Int, viewport: Viewport): MutableList<Int> {
         return viewport.localPlayers()
     }
 
-    override fun getGlobals(viewport: Viewport): MutableList<Int> {
+    override fun getGlobals(entityId: Int, viewport: Viewport): MutableList<Int> {
         return viewport.globalPlayers()
     }
 
     override fun initialize() {
         super.initialize()
         flags = listOf(
+                //0x8000 - Custom colours
                 //Animation
                 create(0x40, Aspect.all(Renderable::class).one(FirstAnimation::class, SecondAnimation::class, ThirdAnimation::class, FourthAnimation::class), PlayerAnimMask(firstAnimationMapper, secondAnimationMapper, thirdAnimationMapper, fourthAnimationMapper), true),
                 //Third Graphic
                 create(0x40000, Aspect.all(Renderable::class, ThirdGraphic::class), PlayerGraphicMask(thirdGraphicMapper)),
+                //0x20000 - Lighting/shading model appearance stuff
                 //Move Type
                 create(0x200, Aspect.all(Renderable::class).one(Moving::class, Walking::class), PlayerMoveTypeMask(walkingMapper, runningMapper, movingMapper), true),
+                //0x2000 - Rendering (second hp bar?)
                 //Fourth Graphic
                 create(0x80000, Aspect.all(Renderable::class, FourthGraphic::class), PlayerGraphicMask(fourthGraphicMapper)),
+                //0x100000 - Toggle for some kind of entity sprite
                 //Hits
                 create(0x4, Aspect.all(Renderable::class, Damage::class), HitsMask(damageMapper, false)),
+                //0x10000 - Unknown
                 //Appearance
                 create(0x8, Aspect.all(Renderable::class, Appearance::class), PlayerAppearanceMask(appearanceDataMapper), true),
                 //Force Chat
                 create(0x4000, Aspect.all(Renderable::class, ForceChat::class), ForceChatMask(forceChatMapper)),
+                //0x400 - Another entity sprite toggle, before the other
                 //Movement Type
                 create(0x1, Aspect.all(Renderable::class, UpdateMovement::class), PlayerMovementMask(runningMapper), true),
                 //Watch Entity
